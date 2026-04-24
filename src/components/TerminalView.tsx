@@ -51,7 +51,7 @@ export default function TerminalView() {
       exit={{ opacity: 0, y: -20 }}
       className="flex flex-col h-full bg-zinc-950 rounded-lg border border-zinc-800 shadow-2xl overflow-hidden"
     >
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800">
+      <div className="flex items-center justify-between px-4 py-2 glass-card-dark border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <TerminalIcon size={14} className="text-emerald-500" />
           <span className="text-[10px] font-mono text-zinc-400 font-bold uppercase tracking-widest">

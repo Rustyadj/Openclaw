@@ -91,6 +91,9 @@ interface Project {
   color?: string;
 }
 
+import { db, auth, handleFirestoreError } from "../lib/firebase";
+import { doc, setDoc, deleteDoc, collection, addDoc, updateDoc, getDocs, query, where } from "firebase/firestore";
+
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export default function ChatView({ 
@@ -109,75 +112,19 @@ export default function ChatView({
   projects: any[]
 }) {
   // Persistence state
-  const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem("mission_projects");
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Migrate old data to include type if missing
-      return parsed.map((p: any) => ({ ...p, type: p.type || 'personal' }));
-    }
-    return [
-      {
-        id: "p1",
-        name: "Mission: Genesis (Dev)",
-        type: "personal",
-        instructions: "Prioritize neural link stability.",
-        files: [
-          { id: "f1", name: "genesis_spec.pdf", type: "file", size: 45000, created_at: Date.now() }
-        ],
-        folders: [
-          {
-            id: "f1",
-            name: "Neural Core",
-            chats: [
-              { id: "c1", title: "Private Handshake", messages: [{ role: "model", content: "Personal neural link active. Access restricted.", timestamp: Date.now() }] }
-            ]
-          }
-        ],
-        chats: [
-          { id: "c2", title: "Vault Overview", messages: [{ role: "model", content: "Systems normal. No external pings.", timestamp: Date.now() }] }
-        ]
-      },
-      {
-        id: "p_org",
-        name: "Company: Helix Ops",
-        type: "org",
-        files: [],
-        folders: [
-          {
-            id: "f_org_1",
-            name: "Global Directives",
-            chats: [
-              { id: "c_org_1", title: "Org Standards", messages: [{ role: "model", content: "Company directives loaded. All agents syncing.", timestamp: Date.now() }] }
-            ]
-          }
-        ],
-        chats: []
-      },
-      {
-        id: "p_shared",
-        name: "Shared: Sync Hub",
-        type: "shared",
-        files: [],
-        folders: [],
-        chats: [
-          { id: "c_sh_1", title: "Shared Logistics", messages: [{ role: "model", content: "Channel established. Explicit data sharing only.", timestamp: Date.now() }] }
-        ]
-      }
-    ];
-  });
-
-  const [activeChatId, setActiveChatId] = useState<string | null>("c1");
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [activeProjectOverviewId, setActiveProjectOverviewId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(["p1", "f1"]));
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash");
   const [disabledMemoryIds, setDisabledMemoryIds] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const projects = serverProjects;
 
   // Initial AI selection - Prefer LISA
   useEffect(() => {
@@ -187,11 +134,6 @@ export default function ChatView({
       if (lisa?.model) setSelectedModel(lisa.model);
     }
   }, [agents, selectedAgentId]);
-
-  // Sync with localStorage
-  useEffect(() => {
-    localStorage.setItem("mission_projects", JSON.stringify(projects));
-  }, [projects]);
 
   // Find active chat and its parents for display
   const getActiveChat = () => {
@@ -206,7 +148,7 @@ export default function ChatView({
 
   const activeData = getActiveChat();
   const activeChat = activeData?.chat;
-  const activeOverviewProject = projects.find(p => p.id === activeProjectOverviewId);
+  const activeOverviewProject = projects?.find(p => p && p.id === activeProjectOverviewId);
 
   // Sync active project context for memory
   useEffect(() => {
@@ -216,8 +158,12 @@ export default function ChatView({
     }
   }, [activeData?.project?.id]);
 
-  const updateProject = (projectId: string, updates: Partial<Project>) => {
-    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...updates } : p));
+  const updateProject = async (projectId: string, updates: Partial<Project>) => {
+    try {
+      await updateDoc(doc(db, "projects", projectId), updates);
+    } catch (error) {
+      handleFirestoreError(error, "update", `projects/${projectId}`);
+    }
   };
 
   const scrollToBottom = () => {
@@ -238,23 +184,28 @@ export default function ChatView({
     });
   };
 
-  const addProject = (type: 'personal' | 'org' | 'shared' = 'personal') => {
-    const newProj: Project = {
-      id: "p_" + Date.now(),
-      name: `New ${type.charAt(0).toUpperCase() + type.slice(1)} Project`,
-      type,
-      folders: [],
-      chats: [],
-      files: [],
-      instructions: ""
-    };
-    setProjects([...projects, newProj]);
-    setEditingId(newProj.id);
-    setEditValue(newProj.name);
+  const addProject = async (type: 'personal' | 'org' | 'shared' = 'personal') => {
+    if (!auth.currentUser) return;
+    try {
+      const newProj = {
+        name: `New ${type.charAt(0).toUpperCase() + type.slice(1)} Project`,
+        type,
+        owner_id: auth.currentUser.uid,
+        folders: [],
+        chats: [],
+        files: [],
+        instructions: ""
+      };
+      const docRef = await addDoc(collection(db, "projects"), newProj);
+      setEditingId(docRef.id);
+      setEditValue(newProj.name);
+    } catch (error) {
+      handleFirestoreError(error, "create", "projects");
+    }
   };
   
   const ProjectList = ({ type, title, icon: Icon, colorClass }: { type: 'personal' | 'org' | 'shared', title: string, icon: any, colorClass: string }) => {
-    const filtered = projects.filter(p => p.type === type);
+    const filtered = (projects || []).filter(p => p && p.type === type);
     return (
       <div className="space-y-1 mb-4">
         <div className="p-2 flex items-center justify-between group">
@@ -299,7 +250,7 @@ export default function ChatView({
                   }}
                   className="flex-1 text-left"
                 >
-                  <span className="text-xs font-bold text-zinc-300 truncate tracking-tight">{project.name}</span>
+                  <span className="text-xs font-bold text-zinc-300 truncate tracking-tight">{project.name || "Untitled Project"}</span>
                 </button>
               )}
 
@@ -396,7 +347,8 @@ export default function ChatView({
     );
   };
 
-  const addChatToRoot = () => {
+  const addChatToRoot = async () => {
+    if (!auth.currentUser) return;
     const newChat: Chat = {
       id: "c_" + Date.now(),
       title: "New Global Chat",
@@ -405,18 +357,29 @@ export default function ChatView({
     // Add to the first project for now as a default container, or create a 'Global' project
     let globalProj = projects.find(p => p.id === 'global_vault');
     if (!globalProj) {
-      const newProj: Project = {
-        id: 'global_vault',
-        name: 'Global Vault',
-        type: 'personal',
-        folders: [],
-        chats: [newChat],
-        files: [],
-        instructions: ""
-      };
-      setProjects([newProj, ...projects]);
+      try {
+        const newProj = {
+          id: 'global_vault',
+          name: 'Global Vault',
+          type: 'personal' as const,
+          folders: [],
+          chats: [newChat],
+          files: [],
+          instructions: "",
+          owner_id: auth.currentUser.uid
+        };
+        await setDoc(doc(db, "projects", "global_vault"), newProj);
+      } catch (error) {
+        handleFirestoreError(error, "create", "projects/global_vault");
+      }
     } else {
-      setProjects(projects.map(p => p.id === 'global_vault' ? { ...p, chats: [newChat, ...p.chats] } : p));
+      try {
+        await updateDoc(doc(db, "projects", "global_vault"), {
+          chats: [newChat, ...globalProj.chats]
+        });
+      } catch (error) {
+        handleFirestoreError(error, "update", "projects/global_vault");
+      }
     }
     setActiveChatId(newChat.id);
     setExpandedItems(prev => new Set(prev).add('global_vault'));
@@ -428,76 +391,133 @@ export default function ChatView({
     addChat(project.id, 'project');
   };
 
-  const addFolder = (projectId: string) => {
+  const addFolder = async (projectId: string) => {
     const newFolder: FolderType = {
       id: "f_" + Date.now(),
       name: "New Folder",
       chats: []
     };
-    setProjects(projects.map(p => p.id === projectId ? { ...p, folders: [...p.folders, newFolder] } : p));
-    setExpandedItems(prev => new Set(prev).add(projectId));
-    setEditingId(newFolder.id);
-    setEditValue(newFolder.name);
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    try {
+      await updateDoc(doc(db, "projects", projectId), {
+        folders: [...project.folders, newFolder]
+      });
+      setExpandedItems(prev => new Set(prev).add(projectId));
+      setEditingId(newFolder.id);
+      setEditValue(newFolder.name);
+    } catch (error) {
+      handleFirestoreError(error, "update", `projects/${projectId}`);
+    }
   };
 
-  const addChat = (parentId: string, type: 'project' | 'folder') => {
+  const addChat = async (parentId: string, type: 'project' | 'folder') => {
     const newChat: Chat = {
       id: "c_" + Date.now(),
       title: "New Conversation",
       messages: [{ role: "model", content: "New thread initialized. Proceed with query.", timestamp: Date.now() }]
     };
     
-    setProjects(projects.map(p => {
-      if (type === 'project' && p.id === parentId) {
-        return { ...p, chats: [...p.chats, newChat] };
-      }
-      if (type === 'folder') {
-        return {
-          ...p,
-          folders: p.folders.map(f => f.id === parentId ? { ...f, chats: [...f.chats, newChat] } : f)
-        };
-      }
-      return p;
-    }));
+    const project = projects.find(p => {
+      if (type === 'project' && p.id === parentId) return true;
+      if (type === 'folder' && p.folders.some(f => f.id === parentId)) return true;
+      return false;
+    });
 
-    if (type === 'project') setExpandedItems(prev => new Set(prev).add(parentId));
-    else setExpandedItems(prev => new Set(prev).add(parentId));
-    
-    setActiveChatId(newChat.id);
-    setEditingId(newChat.id);
-    setEditValue(newChat.title);
-  };
+    if (!project) return;
 
-  const deleteItem = (id: string, type: 'project' | 'folder' | 'chat') => {
-    if (type === 'project') setProjects(projects.filter(p => p.id !== id));
-    else if (type === 'folder') {
-      setProjects(projects.map(p => ({ ...p, folders: p.folders.filter(f => f.id !== id) })));
-    } else {
-      setProjects(projects.map(p => ({
-        ...p,
-        chats: p.chats.filter(c => c.id !== id),
-        folders: p.folders.map(f => ({ ...f, chats: f.chats.filter(c => c.id !== id) }))
-      })));
-      if (activeChatId === id) setActiveChatId(null);
+    try {
+      let updatedFolders = project.folders;
+      let updatedChats = project.chats;
+
+      if (type === 'project') {
+        updatedChats = [...project.chats, newChat];
+      } else {
+        updatedFolders = project.folders.map(f => f.id === parentId ? { ...f, chats: [...f.chats, newChat] } : f);
+      }
+
+      await updateDoc(doc(db, "projects", project.id), {
+        folders: updatedFolders,
+        chats: updatedChats
+      });
+
+      setExpandedItems(prev => new Set(prev).add(parentId));
+      setActiveChatId(newChat.id);
+      setEditingId(newChat.id);
+      setEditValue(newChat.title);
+    } catch (error) {
+      handleFirestoreError(error, "update", `projects/${project.id}`);
     }
   };
 
-  const saveEdit = () => {
+  const deleteItem = async (id: string, type: 'project' | 'folder' | 'chat') => {
+    if (type === 'project') {
+      try {
+        await deleteDoc(doc(db, "projects", id));
+      } catch (error) {
+        handleFirestoreError(error, "delete", `projects/${id}`);
+      }
+    } else {
+      // Logic for nested folder/chat within project doc
+      const project = projects.find(p => {
+        if (p.folders.some(f => f.id === id) && type === 'folder') return true;
+        if (p.chats.some(c => c.id === id) && type === 'chat') return true;
+        if (p.folders.some(f => f.chats.some(c => c.id === id)) && type === 'chat') return true;
+        return false;
+      });
+
+      if (!project) return;
+
+      const newFolders = project.folders.filter(f => f.id !== id).map(f => ({
+        ...f,
+        chats: f.chats.filter(c => c.id !== id)
+      }));
+      const newChats = project.chats.filter(c => c.id !== id);
+
+      try {
+        await updateDoc(doc(db, "projects", project.id), {
+          folders: newFolders,
+          chats: newChats
+        });
+        if (activeChatId === id) setActiveChatId(null);
+      } catch (error) {
+        handleFirestoreError(error, "update", `projects/${project.id}`);
+      }
+    }
+  };
+
+  const saveEdit = async () => {
     if (!editingId) return;
-    setProjects(projects.map(p => {
-      if (p.id === editingId) return { ...p, name: editValue };
-      return {
-        ...p,
-        folders: p.folders.map(f => {
-          if (f.id === editingId) return { ...f, name: editValue };
-          return {
-            ...f,
-            chats: f.chats.map(c => c.id === editingId ? { ...c, title: editValue } : c)
-          };
-        }),
-        chats: p.chats.map(c => c.id === editingId ? { ...c, title: editValue } : c)
-      };
-    }));
+    
+    // Find where the ID belongs
+    const project = projects.find(p => {
+       if (p.id === editingId) return true;
+       if (p.folders.some(f => f.id === editingId)) return true;
+       if (p.chats.some(c => c.id === editingId)) return true;
+       if (p.folders.some(f => f.chats.some(c => c.id === editingId))) return true;
+       return false;
+    });
+
+    if (!project) return;
+
+    if (project.id === editingId) {
+      await updateDoc(doc(db, "projects", project.id), { name: editValue });
+    } else {
+      const newFolders = project.folders.map(f => {
+        if (f.id === editingId) return { ...f, name: editValue };
+        return {
+          ...f,
+          chats: f.chats.map(c => c.id === editingId ? { ...c, title: editValue } : c)
+        };
+      });
+      const newChats = project.chats.map(c => c.id === editingId ? { ...c, title: editValue } : c);
+
+      await updateDoc(doc(db, "projects", project.id), {
+        folders: newFolders,
+        chats: newChats
+      });
+    }
     setEditingId(null);
   };
 
@@ -511,14 +531,30 @@ export default function ChatView({
     const timestamp = Date.now();
     
     // Update state locally first
-    setProjects(prev => prev.map(p => ({
-      ...p,
-      chats: p.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "user", content: userMessage, timestamp }] } : c),
-      folders: p.folders.map(f => ({
-        ...f,
-        chats: f.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "user", content: userMessage, timestamp }] } : c)
-      }))
-    })));
+    // Since we are using Firestore onSnapshot in App.tsx, we update Firestore and let the snapshot update the local state.
+    const project = activeData?.project;
+    if (!project) return;
+
+    const newFolders = project.folders.map(f => {
+      if (activeData.folder && f.id === activeData.folder.id) {
+        return {
+          ...f,
+          chats: f.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "user", content: userMessage, timestamp }] } : c)
+        }
+      }
+      return f;
+    });
+
+    const newChats = project.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "user", content: userMessage, timestamp }] } : c);
+
+    try {
+      await updateDoc(doc(db, "projects", project.id), {
+        folders: newFolders,
+        chats: newChats
+      });
+    } catch (err) {
+      console.error("Failed to save message", err);
+    }
     
     setIsLoading(true);
 
@@ -581,14 +617,25 @@ export default function ChatView({
 
       const aiContent = response.text || "Connection timing out. Neural link degraded.";
       
-      setProjects(prev => prev.map(p => ({
-        ...p,
-        chats: p.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "model", content: aiContent, timestamp: Date.now() }] } : c),
-        folders: p.folders.map(f => ({
-          ...f,
-          chats: f.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "model", content: aiContent, timestamp: Date.now() }] } : c)
-        }))
-      })));
+      const currentProject = projects.find(p => p.id === project.id);
+      if (!currentProject) return;
+
+      const updatedFolders = currentProject.folders.map(f => {
+        if (activeData.folder && f.id === activeData.folder.id) {
+          return {
+            ...f,
+            chats: f.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "model", content: aiContent, timestamp: Date.now() }] } : c)
+          }
+        }
+        return f;
+      });
+
+      const updatedChats = currentProject.chats.map(c => c.id === activeChatId ? { ...c, messages: [...c.messages, { role: "model", content: aiContent, timestamp: Date.now() }] } : c);
+
+      await updateDoc(doc(db, "projects", project.id), {
+        folders: updatedFolders,
+        chats: updatedChats
+      });
     } catch (error) {
       console.error("Chat error:", error);
     } finally {
@@ -653,7 +700,7 @@ export default function ChatView({
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{activeData?.project.name}</span>
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{activeData?.project?.name || "Global"}</span>
                     <ChevronRight size={10} className="text-zinc-600" />
                     {activeData?.folder && (
                       <>
@@ -852,7 +899,7 @@ export default function ChatView({
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-            <div className="w-20 h-20 rounded-3xl bg-zinc-900 border border-border flex items-center justify-center mb-6">
+            <div className="w-20 h-20 rounded-3xl glass-card-dark border border-border flex items-center justify-center mb-6">
               <MessageSquare size={32} className="text-zinc-600" />
             </div>
             <h2 className="text-xl font-bold text-zinc-100 italic mb-2 tracking-tight">Select Logical Thread</h2>

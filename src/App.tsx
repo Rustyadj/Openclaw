@@ -15,10 +15,15 @@ import {
   MessageSquare,
   Network,
   ChevronRight,
-  LineChart
+  LineChart,
+  LogOut,
+  LogIn
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import socket from "./lib/socket";
+import { auth, signIn, logOut, db } from "./lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 
 // Components
 import AgentsView from "./components/AgentsView";
@@ -39,59 +44,93 @@ import { Button } from "./components/ui/button";
 import { TooltipProvider } from "./components/ui/tooltip";
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
   const [agents, setAgents] = useState<any[]>([]);
   const [skills, setSkills] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
   const [usage, setUsage] = useState<any>(null);
   const [cronJobs, setCronJobs] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
+  const [clawhubRegistry, setClawhubRegistry] = useState<any[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [isSidebarTabsVisible, setIsSidebarTabsVisible] = useState(true);
 
   useEffect(() => {
-    socket.on("init_data", (data) => {
-      setAgents(data.agents);
-      setSkills(data.skills);
-      setUsage(data.usage);
-      setCronJobs(data.cronJobs || []);
-      setProjects(data.projects || []);
+    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+      setUser(u);
     });
 
-    socket.on("agent_updated", (updatedAgents) => {
-      setAgents(updatedAgents);
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      // Clear data if not logged in
+      setAgents([]);
+      setCronJobs([]);
+      setProjects([]);
+      return;
+    }
+
+    // Subscribe to Firestore collections for the user
+    const qAgents = query(collection(db, "agents"), where("userId", "==", user.uid));
+    const unsubscribeAgents = onSnapshot(qAgents, (snapshot) => {
+      setAgents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const qProjects = query(collection(db, "projects"), where("owner_id", "==", user.uid));
+    const unsubscribeProjects = onSnapshot(qProjects, (snapshot) => {
+      setProjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    const qCron = query(collection(db, "cronJobs"), where("userId", "==", user.uid));
+    const unsubscribeCron = onSnapshot(qCron, (snapshot) => {
+      setCronJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    // Skills and usage might be global or specific
+    const unsubscribeUsage = onSnapshot(doc(db, "stats", user.uid), (doc) => {
+      if (doc.exists()) setUsage(doc.data());
+    });
+
+    // Socket still used for logs and init fallback if needed
+    socket.on("init_data", (data) => {
+      setSkills(data.skills);
+      setClawhubRegistry(data.registry);
+      if (!user) { // Only use init data if we don't have user yet
+        setAgents(data.agents);
+        setProjects(data.projects);
+        setCronJobs(data.cronJobs);
+        setUsage(data.usage);
+      }
     });
 
     socket.on("agent_log", (log) => {
       setLogs(prev => [log, ...prev].slice(0, 100));
     });
 
-    socket.on("usage_updated", (newUsage) => {
-      setUsage(newUsage);
-    });
-
-    socket.on("cron_jobs_updated", (newJobs) => {
-      setCronJobs(newJobs);
-    });
-
     return () => {
+      unsubscribeAgents();
+      unsubscribeProjects();
+      unsubscribeCron();
+      unsubscribeUsage();
       socket.off("init_data");
-      socket.off("agent_updated");
       socket.off("agent_log");
-      socket.off("usage_updated");
-      socket.off("cron_jobs_updated");
     };
-  }, []);
+  }, [user]);
 
   return (
     <TooltipProvider>
       <Router>
         <AppLayout 
+          user={user}
           agents={agents} 
           skills={skills} 
           logs={logs} 
           usage={usage} 
           cronJobs={cronJobs} 
           projects={projects}
+          clawhubRegistry={clawhubRegistry}
           activeProjectId={activeProjectId}
           setActiveProjectId={setActiveProjectId}
           isSidebarTabsVisible={isSidebarTabsVisible}
@@ -103,23 +142,27 @@ export default function App() {
 }
 
 function AppLayout({ 
+  user,
   agents, 
   skills, 
   logs, 
   usage, 
   cronJobs, 
   projects, 
+  clawhubRegistry,
   activeProjectId, 
   setActiveProjectId,
   isSidebarTabsVisible,
   setIsSidebarTabsVisible
 }: { 
+  user: User | null,
   agents: any[], 
   skills: any[], 
   logs: any[], 
   usage: any, 
   cronJobs: any[],
   projects: any[],
+  clawhubRegistry: any[],
   activeProjectId: string | null,
   setActiveProjectId: (id: string | null) => void,
   isSidebarTabsVisible: boolean,
@@ -202,9 +245,23 @@ function AppLayout({
           <div className="flex items-center gap-6">
             <span className="text-xs font-bold text-zinc-100 uppercase tracking-widest text-crisp">OPENCLAW DASHBOARD</span>
             
-            <button className="w-8 h-8 rounded-full overflow-hidden border border-white/10 hover:border-emerald-500/50 transition-all">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="User" referrerPolicy="no-referrer" />
-            </button>
+            {user ? (
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-zinc-100 tracking-tight">{user.displayName || 'Operator'}</span>
+                  <button onClick={logOut} className="text-[9px] text-rose-400 hover:text-rose-300 transition-colors uppercase font-bold tracking-widest flex items-center gap-1">
+                    <LogOut size={8} /> Terminate Session
+                  </button>
+                </div>
+                <button className="w-8 h-8 rounded-full overflow-hidden border border-emerald-500/30 hover:border-emerald-500/50 transition-all">
+                  <img src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} alt="User" referrerPolicy="no-referrer" />
+                </button>
+              </div>
+            ) : (
+              <Button onClick={signIn} size="sm" className="btn-primary text-[10px] font-bold uppercase tracking-widest h-8 px-4">
+                <LogIn size={12} className="mr-2" /> Initialize Authorization
+              </Button>
+            )}
           </div>
         </header>
 

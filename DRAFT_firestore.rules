@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isServerTimestamp(field) {
+      return field == request.time;
+    }
+
+    // --- Collection Validations ---
+
+    function isValidAgent(data) {
+      return data.keys().hasAll(['name', 'role', 'model', 'userId']) 
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.role is string && data.role.size() <= 100
+        && data.model is string && data.model.size() <= 100
+        && data.userId == request.auth.uid
+        && (data.get('status', 'idle') in ['idle', 'running', 'failed'])
+        && (data.get('type', 'agent') in ['agent', 'sub-agent'])
+        && (data.get('instructions', '').size() <= 5000);
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['name', 'owner_id'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.owner_id == request.auth.uid;
+    }
+
+    function isValidMemory(data) {
+      return data.keys().hasAll(['content', 'user_id', 'scope'])
+        && data.content is string && data.content.size() <= 100000
+        && data.user_id == request.auth.uid
+        && data.scope in ['global', 'project', 'session'];
+    }
+
+    function isValidCronJob(data) {
+      return data.keys().hasAll(['name', 'schedule', 'targetAgentId', 'userId'])
+        && data.name is string && data.name.size() <= 100
+        && data.schedule is string && data.schedule.size() <= 100
+        && data.userId == request.auth.uid
+        && exists(/databases/$(database)/documents/agents/$(data.targetAgentId));
+    }
+
+    // --- Match Groups ---
+
+    match /agents/{agentId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isOwner(existing().userId) && isValidId(agentId);
+      allow create: if isSignedIn() && isValidAgent(incoming()) && isValidId(agentId);
+      allow update: if isOwner(existing().userId) && isValidAgent(incoming())
+        && incoming().userId == existing().userId // Immutable userId
+        && (
+          // Action: Update status
+          (incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+          // Action: General update
+          (incoming().diff(existing()).affectedKeys().hasAll(['name', 'role', 'model']))
+        );
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /projects/{projectId} {
+      allow list: if isSignedIn() && resource.data.owner_id == request.auth.uid;
+      allow get: if isOwner(existing().owner_id) && isValidId(projectId);
+      allow create: if isSignedIn() && isValidProject(incoming()) && isValidId(projectId);
+      allow update: if isOwner(existing().owner_id) && isValidProject(incoming())
+        && incoming().owner_id == existing().owner_id;
+      allow delete: if isOwner(existing().owner_id);
+    }
+
+    match /memories/{memoryId} {
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow get: if isOwner(existing().user_id) && isValidId(memoryId);
+      allow create: if isSignedIn() && isValidMemory(incoming()) && isValidId(memoryId);
+      allow update: if isOwner(existing().user_id) && isValidMemory(incoming())
+        && incoming().user_id == existing().user_id;
+      allow delete: if isOwner(existing().user_id);
+    }
+
+    match /cronJobs/{jobId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isOwner(existing().userId) && isValidId(jobId);
+      allow create: if isSignedIn() && isValidCronJob(incoming()) && isValidId(jobId);
+      allow update: if isOwner(existing().userId) && isValidCronJob(incoming())
+        && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /stats/usage {
+      allow read: if isSignedIn();
+      allow write: if false; // System only (for demo, we'll assume a backend or function updates this)
+    }
+  }
+}

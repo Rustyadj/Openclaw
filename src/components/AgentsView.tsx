@@ -56,8 +56,10 @@ import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { ScrollArea } from "./ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import socket from "../lib/socket";
+import { db, auth, handleFirestoreError } from "../lib/firebase";
+import { doc, setDoc, deleteDoc, collection, addDoc, updateDoc } from "firebase/firestore";
 
 export default function AgentsView({ agents }: { agents: any[] }) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -154,14 +156,10 @@ export default function AgentsView({ agents }: { agents: any[] }) {
 
   const decommissionAgent = async (agentId: string) => {
     try {
-      const response = await fetch(`/api/agents/${agentId}`, {
-        method: "DELETE"
-      });
-      if (response.ok) {
-        if (selectedAgent?.id === agentId) setSelectedAgent(null);
-      }
+      await deleteDoc(doc(db, "agents", agentId));
+      if (selectedAgent?.id === agentId) setSelectedAgent(null);
     } catch (error) {
-      console.error("Failed to decommission agent:", error);
+      handleFirestoreError(error, "delete", `agents/${agentId}`);
     }
   };
 
@@ -173,43 +171,46 @@ export default function AgentsView({ agents }: { agents: any[] }) {
   };
 
   const handleCreate = async () => {
-    if (!formData.name) return;
+    if (!formData.name || !auth.currentUser) return;
     
-    const url = editingAgentId ? `/api/agents/${editingAgentId}` : "/api/agents";
-    const method = editingAgentId ? "PUT" : "POST";
-
     try {
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData
-        })
-      });
-      
-      if (response.ok) {
-        setIsCreateOpen(false);
-        setEditingAgentId(null);
-        setFormData({ 
-          name: "", 
-          role: "", 
-          model: "gemini-1.5-flash", 
-          type: "agent", 
-          layer: "personal",
-          personality: "professional",
-          temperature: 0.7,
-          taskPrioritization: 0.5,
-          maxTokens: 2048,
-          instructions: "",
-          memory_provider: "LanceDB-Standard",
-          tools: [],
-          skills: [],
-          toolsEnabled: true,
-          permissions: { read: true, write: true, remember: true, share: false }
+      const agentData = {
+        ...formData,
+        userId: auth.currentUser.uid,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (editingAgentId) {
+        await updateDoc(doc(db, "agents", editingAgentId), agentData);
+      } else {
+        await addDoc(collection(db, "agents"), {
+          ...agentData,
+          status: "idle",
+          createdAt: new Date().toISOString()
         });
       }
+      
+      setIsCreateOpen(false);
+      setEditingAgentId(null);
+      setFormData({ 
+        name: "", 
+        role: "", 
+        model: "gemini-1.5-flash", 
+        type: "agent", 
+        layer: "personal",
+        personality: "professional",
+        temperature: 0.7,
+        taskPrioritization: 0.5,
+        maxTokens: 2048,
+        instructions: "",
+        memory_provider: "LanceDB-Standard",
+        tools: [],
+        skills: [],
+        toolsEnabled: true,
+        permissions: { read: true, write: true, remember: true, share: false }
+      });
     } catch (error) {
-      console.error(editingAgentId ? "Failed to update agent:" : "Failed to create agent:", error);
+      handleFirestoreError(error, editingAgentId ? "update" : "create", "agents");
     }
   };
 
@@ -563,7 +564,7 @@ export default function AgentsView({ agents }: { agents: any[] }) {
         </Dialog>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="bg-zinc-900/10 p-0.5 rounded-lg w-fit mb-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="glass-card-dark/10 p-0.5 rounded-lg w-fit mb-4">
         <TabsList className="bg-transparent border border-border/50">
           <TabsTrigger value="all" className="text-[10px] uppercase font-bold tracking-widest h-7">All Units</TabsTrigger>
           <TabsTrigger value="personal" className="text-[10px] uppercase font-bold tracking-widest h-7">Personal</TabsTrigger>
@@ -582,10 +583,9 @@ export default function AgentsView({ agents }: { agents: any[] }) {
               <Card 
                 key={agent.id} 
                 className={cn(
-                  "glass-card glass-card-dark group hover:glass-card-accent transition-all cursor-pointer relative overflow-hidden",
-                  isSelected ? "glass-card-accent shadow-[0_0_15px_rgba(255,90,0,0.1)] border-emerald-500/30" : ""
+                  "glass-card glass-card-dark group hover:border-emerald-500/20 transition-all relative overflow-hidden",
+                  isSelected ? "shadow-[0_0_15px_rgba(255,90,0,0.1)] border-emerald-500/30" : ""
                 )}
-                onClick={() => setSelectedAgent(agent)}
               >
                 {/* Architecture & Status Indicator */}
                 <div className="absolute top-0 right-0 flex">
@@ -613,16 +613,38 @@ export default function AgentsView({ agents }: { agents: any[] }) {
                       <CheckCircle size={10} className={isSelected ? "text-white" : "text-transparent"} />
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    <div 
+                      className="flex items-center gap-2 p-1 rounded pr-3"
+                    >
                       <div className={cn(
                         "w-7 h-7 rounded border border-white/5 flex items-center justify-center bg-white/5",
                         agent.type === 'sub-agent' ? "text-blue-400" : "text-emerald-500"
                       )}>
                         {agent.type === 'sub-agent' ? <Layers size={14} /> : <Bot size={14} />}
                       </div>
-                      <div>
-                        <CardTitle className="text-xs font-bold text-zinc-100 truncate max-w-[120px]">{agent.name}</CardTitle>
-                        <p className="text-[9px] font-mono text-emerald-500/70 font-bold uppercase tracking-wider">{agent.role}</p>
+                      <div className="flex flex-col min-w-0">
+                        <input 
+                          className="text-xs font-bold bg-transparent border-none text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500/30 rounded px-1 -ml-1 w-full"
+                          value={agent.name}
+                          onChange={async (e) => {
+                            try {
+                              await updateDoc(doc(db, "agents", agent.id), { name: e.target.value });
+                            } catch (err) {
+                              handleFirestoreError(err, "update", `agents/${agent.id}`);
+                            }
+                          }}
+                        />
+                        <input 
+                          className="text-[9px] font-mono bg-transparent border-none text-emerald-500/70 font-bold uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-emerald-500/30 rounded px-1 -ml-1 w-full"
+                          value={agent.role}
+                          onChange={async (e) => {
+                            try {
+                              await updateDoc(doc(db, "agents", agent.id), { role: e.target.value });
+                            } catch (err) {
+                              handleFirestoreError(err, "update", `agents/${agent.id}`);
+                            }
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -670,13 +692,29 @@ export default function AgentsView({ agents }: { agents: any[] }) {
 
                 <CardContent className="p-4 pt-3 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Model:</span>
-                      <Badge variant="outline" className="text-[8px] py-0 px-1 border-white/5 bg-white/5 text-zinc-400 font-mono">
-                        {agent.model}
-                      </Badge>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex-shrink-0">Model:</span>
+                      <Select 
+                        value={agent.model} 
+                        onValueChange={async (val) => {
+                          try {
+                            await updateDoc(doc(db, "agents", agent.id), { model: val });
+                          } catch (err) {
+                            handleFirestoreError(err, "update", `agents/${agent.id}`);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-5 bg-white/5 border-white/5 text-[8px] font-mono text-zinc-400 py-0 px-1 w-fit focus:ring-0">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card border-border">
+                          <SelectItem value="gemini-1.5-flash" className="text-[10px]">1.5 Flash</SelectItem>
+                          <SelectItem value="gemini-1.5-pro" className="text-[10px]">1.5 Pro</SelectItem>
+                          <SelectItem value="gemini-2.0-flash-exp" className="text-[10px]">2.0 Flash</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Status:</span>
                       <div className={cn(
                         "w-1.5 h-1.5 rounded-full",

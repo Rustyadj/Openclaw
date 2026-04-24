@@ -1,0 +1,245 @@
+{
+  "entities": {
+    "Agent": {
+      "title": "Agent",
+      "description": "An autonomous AI agent configuration.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "model": { "type": "string" },
+        "status": { "type": "string", "enum": ["idle", "running", "failed"] },
+        "memory_provider": { "type": "string" },
+        "tools": { "type": "array", "items": { "type": "string" } },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "type": { "type": "string", "enum": ["agent", "sub-agent"] },
+        "layer": { "type": "string" },
+        "permissions": {
+          "type": "object",
+          "properties": {
+            "read": { "type": "boolean" },
+            "write": { "type": "boolean" },
+            "remember": { "type": "boolean" },
+            "share": { "type": "boolean" }
+          }
+        },
+        "instructions": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "role", "model", "userId"]
+    },
+    "Organization": {
+      "title": "Organization",
+      "description": "A top-level entity representing a company or team.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "ownerId"]
+    },
+    "Member": {
+      "title": "Org Member",
+      "description": "A user or agent belonging to an organization.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orgId": { "type": "string" },
+        "userId": { "type": "string" },
+        "agentId": { "type": "string" },
+        "type": { "type": "string", "enum": ["human", "agent"] },
+        "role": { "type": "string" },
+        "department": { "type": "string" },
+        "status": { "type": "string", "enum": ["online", "offline", "busy"] }
+      },
+      "required": ["orgId", "type", "role"]
+    },
+    "DiscussionChannel": {
+      "title": "Discussion Channel",
+      "description": "A channel for team discussions.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orgId": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["public", "private", "department", "board", "ai-only"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orgId", "name", "type"]
+    },
+    "DiscussionMessage": {
+      "title": "Discussion Message",
+      "description": "A message in a discussion channel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "channelId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderType": { "type": "string", "enum": ["human", "agent"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["channelId", "senderId", "senderType", "content"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A task assigned to a member.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orgId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "assigneeId": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "done"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orgId", "title", "status"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A container for neural network initiatives and files.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "color": { "type": "string" },
+        "owner_id": { "type": "string" },
+        "instructions": { "type": "string" },
+        "department": { "type": "string" },
+        "status": { "type": "string" },
+        "priority": { "type": "string" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "progress": { "type": "number" },
+        "teamMembers": { "type": "array", "items": { "type": "string" } },
+        "linkedAgents": { "type": "array", "items": { "type": "string" } },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "type": { "type": "string" },
+              "size": { "type": "number" },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      },
+      "required": ["name", "owner_id"]
+    },
+    "Memory": {
+      "title": "Memory",
+      "description": "A persistent unit of information stored in long-term memory.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "project_id": { "type": "string" },
+        "chat_id": { "type": "string" },
+        "scope": { "type": "string", "enum": ["global", "project", "session"] },
+        "content": { "type": "string" },
+        "summary": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "source_type": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "importance_score": { "type": "number" }
+      },
+      "required": ["user_id", "content", "scope"]
+    },
+    "CronJob": {
+      "title": "CronJob",
+      "description": "A scheduled background task.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "schedule": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "targetAgentId": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "schedule", "targetAgentId", "userId"]
+    },
+    "Stats": {
+      "title": "Usage Stats",
+      "description": "Aggregated usage and cost metrics.",
+      "type": "object",
+      "properties": {
+        "cpu": { "type": "number" },
+        "memory": { "type": "number" },
+        "requests": { "type": "number" },
+        "latency": { "type": "number" },
+        "cost": {
+          "type": "object",
+          "properties": {
+            "total": { "type": "number" },
+            "today": { "type": "number" },
+            "average": { "type": "number" },
+            "currency": { "type": "string" }
+          }
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "tokens": { "type": "number" },
+              "cost": { "type": "number" },
+              "color": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "organizations": {
+      "schema": "Organization",
+      "description": "Organizations."
+    },
+    "members": {
+      "schema": "Member",
+      "description": "Org members."
+    },
+    "discussionChannels": {
+      "schema": "DiscussionChannel",
+      "description": "Discussion channels."
+    },
+    "discussionMessages": {
+      "schema": "DiscussionMessage",
+      "description": "Discussion messages."
+    },
+    "tasks": {
+      "schema": "Task",
+      "description": "Tasks."
+    },
+    "agents": {
+      "schema": "Agent",
+      "description": "Collection of neural agents."
+    },
+    "projects": {
+      "schema": "Project",
+      "description": "User projects."
+    },
+    "memories": {
+      "schema": "Memory",
+      "description": "Vector memory storage units."
+    },
+    "cronJobs": {
+      "schema": "CronJob",
+      "description": "Scheduled maintenance tasks."
+    },
+    "stats/usage": {
+      "schema": "Stats",
+      "description": "Global usage telemetry."
+    }
+  }
+}

@@ -88,7 +88,7 @@ export default function LisaAssistant() {
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             className="mb-4"
           >
-            <Card className="w-80 h-[450px] bg-zinc-900 border-emerald-500/20 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl">
+            <Card className="w-80 h-[450px] glass-card-dark border-emerald-500/20 shadow-2xl flex flex-col overflow-hidden backdrop-blur-xl">
               <div className="p-4 bg-emerald-500/10 border-b border-emerald-500/10 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center text-zinc-950">

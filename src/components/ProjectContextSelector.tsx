@@ -78,9 +78,9 @@ export default function ProjectContextSelector({
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-2 h-2 rounded-full" 
-                    style={{ backgroundColor: projects.find(p => p.id === activeProjectId)?.color }} 
+                    style={{ backgroundColor: projects?.find(p => p.id === activeProjectId)?.color || "#71717a" }} 
                   />
-                  <span className="truncate">{projects.find(p => p.id === activeProjectId)?.name}</span>
+                  <span className="truncate">{projects?.find(p => p.id === activeProjectId)?.name || "Unknown Project"}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ export default function ProjectContextSelector({
                 <span>Global context</span>
               </div>
             </SelectItem>
-            {projects.map((project) => (
+            {projects?.filter(p => p && p.id).map((project) => (
               <SelectItem key={project.id} value={project.id}>
                 <div className="flex items-center gap-2">
                   <div 

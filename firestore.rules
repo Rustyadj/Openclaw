@@ -1,0 +1,189 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Collection Validations ---
+
+    function isValidAgent(data) {
+      return data.keys().hasAll(['name', 'role', 'model', 'userId']) 
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.role is string && data.role.size() <= 100
+        && data.model is string && data.model.size() <= 100
+        && data.userId == request.auth.uid
+        && (data.get('status', 'idle') in ['idle', 'running', 'failed'])
+        && (data.get('type', 'agent') in ['agent', 'sub-agent'])
+        && (data.get('instructions', '').size() <= 5000);
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['name', 'owner_id'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.owner_id == request.auth.uid;
+    }
+
+    function isValidMemory(data) {
+      return data.keys().hasAll(['content', 'user_id', 'scope'])
+        && data.content is string && data.content.size() <= 100000
+        && data.user_id == request.auth.uid
+        && data.scope in ['global', 'project', 'session']
+        && (data.get('importance_score', 0) is number && data.get('importance_score', 0) >= 0 && data.get('importance_score', 0) <= 1);
+    }
+
+    function isValidCronJob(data) {
+      return data.keys().hasAll(['name', 'schedule', 'targetAgentId', 'userId'])
+        && data.name is string && data.name.size() <= 100
+        && data.schedule is string && data.schedule.size() <= 100
+        && data.userId == request.auth.uid
+        && exists(/databases/$(database)/documents/agents/$(data.targetAgentId));
+    }
+
+    function isValidOrganization(data) {
+      return data.keys().hasAll(['name', 'ownerId'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.ownerId == request.auth.uid;
+    }
+
+    function isValidMember(data) {
+      return data.keys().hasAll(['orgId', 'type', 'role'])
+        && data.orgId is string && data.orgId.size() > 0
+        && data.type in ['human', 'agent']
+        && data.role is string && data.role.size() <= 100;
+    }
+
+    function isValidDiscussionChannel(data) {
+      return data.keys().hasAll(['orgId', 'name', 'type'])
+        && data.orgId is string && data.orgId.size() > 0
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.type in ['public', 'private', 'department', 'board', 'ai-only'];
+    }
+
+    function isValidDiscussionMessage(data) {
+      return data.keys().hasAll(['channelId', 'senderId', 'senderType', 'content'])
+        && data.channelId is string && data.channelId.size() > 0
+        && data.senderId is string && data.senderId.size() > 0
+        && data.senderType in ['human', 'agent']
+        && data.content is string && data.content.size() <= 10000;
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['orgId', 'title', 'status'])
+        && data.orgId is string && data.orgId.size() > 0
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 200
+        && data.status in ['todo', 'in_progress', 'done'];
+    }
+
+    // --- Match Groups ---
+
+    match /agents/{agentId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isOwner(existing().userId) && isValidId(agentId);
+      allow create: if isSignedIn() && isValidAgent(incoming()) && isValidId(agentId);
+      allow update: if isOwner(existing().userId) && isValidAgent(incoming())
+        && incoming().userId == existing().userId // Immutable userId
+        && (
+          // Action: Update status
+          (incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+          // Action: Update parameters
+          (incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'model', 'instructions', 'memory_provider', 'tools', 'skills', 'layer', 'permissions', 'temperature', 'taskPrioritization']))
+        );
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /projects/{projectId} {
+      allow list: if isSignedIn() && resource.data.owner_id == request.auth.uid;
+      allow get: if isOwner(existing().owner_id) && isValidId(projectId);
+      allow create: if isSignedIn() && isValidProject(incoming()) && isValidId(projectId);
+      allow update: if isOwner(existing().owner_id) && isValidProject(incoming())
+        && incoming().owner_id == existing().owner_id;
+      allow delete: if isOwner(existing().owner_id);
+    }
+
+    match /memories/{memoryId} {
+      allow list: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow get: if isOwner(existing().user_id) && isValidId(memoryId);
+      allow create: if isSignedIn() && isValidMemory(incoming()) && isValidId(memoryId);
+      allow update: if isOwner(existing().user_id) && isValidMemory(incoming())
+        && incoming().user_id == existing().user_id;
+      allow delete: if isOwner(existing().user_id);
+    }
+
+    match /cronJobs/{jobId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isOwner(existing().userId) && isValidId(jobId);
+      allow create: if isSignedIn() && isValidCronJob(incoming()) && isValidId(jobId);
+      allow update: if isOwner(existing().userId) && isValidCronJob(incoming())
+        && incoming().userId == existing().userId;
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /organizations/{docId} {
+      allow list, get: if isSignedIn();
+      allow create: if isSignedIn() && isValidOrganization(incoming());
+      allow update: if isSignedIn() && isValidOrganization(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /members/{docId} {
+      allow list, get: if isSignedIn();
+      allow create: if isSignedIn() && isValidMember(incoming());
+      allow update: if isSignedIn() && isValidMember(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /discussionChannels/{docId} {
+      allow list, get: if isSignedIn();
+      allow create: if isSignedIn() && isValidDiscussionChannel(incoming());
+      allow update: if isSignedIn() && isValidDiscussionChannel(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /discussionMessages/{docId} {
+      allow list, get: if isSignedIn();
+      allow create: if isSignedIn() && isValidDiscussionMessage(incoming());
+      allow update: if isSignedIn() && isValidDiscussionMessage(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /tasks/{docId} {
+      allow list, get: if isSignedIn();
+      allow create: if isSignedIn() && isValidTask(incoming());
+      allow update: if isSignedIn() && isValidTask(incoming());
+      allow delete: if isSignedIn();
+    }
+
+    match /stats/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; 
+    }
+
+    match /stats/usage {
+      allow read: if isSignedIn();
+      allow write: if false; 
+    }
+  }
+}

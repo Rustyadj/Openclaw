@@ -13,9 +13,20 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
+import { db, handleFirestoreError } from "../lib/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 
 export default function CronJobsView({ cronJobs }: { cronJobs: any[] }) {
+  const toggleStatus = async (jobId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === "active" ? "inactive" : "active";
+      await updateDoc(doc(db, "cronJobs", jobId), { status: newStatus });
+    } catch (error) {
+      handleFirestoreError(error, "update", `cronJobs/${jobId}`);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
@@ -74,10 +85,14 @@ export default function CronJobsView({ cronJobs }: { cronJobs: any[] }) {
                    </div>
                    <div className="flex gap-2">
                      <Button variant="outline" size="sm" className="h-8 text-[10px] uppercase font-bold tracking-widest border-border hover:bg-muted">Logs</Button>
-                     <Button size="sm" className={cn(
-                       "h-8 text-[10px] uppercase font-bold tracking-widest transition-all",
-                       job.status === 'active' ? "bg-zinc-800 text-zinc-400 hover:bg-zinc-700" : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
-                     )}>
+                     <Button 
+                       onClick={() => toggleStatus(job.id, job.status)}
+                       size="sm" 
+                       className={cn(
+                         "h-8 text-[10px] uppercase font-bold tracking-widest transition-all",
+                         job.status === 'active' ? "bg-zinc-800 text-zinc-400 hover:bg-zinc-700" : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+                       )}
+                     >
                        {job.status === 'active' ? 'Disable' : 'Enable'}
                      </Button>
                    </div>

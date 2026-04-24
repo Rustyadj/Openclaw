@@ -31,6 +31,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "./ui/dropdown-menu";
+import { db, auth, handleFirestoreError } from "../lib/firebase";
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 interface Memory {
   id: string;
@@ -59,21 +61,32 @@ export default function MemoryView({ activeProjectId, projects }: { activeProjec
   const [loading, setLoading] = useState(true);
 
   const fetchMemories = async () => {
+    if (!auth.currentUser) return;
     setLoading(true);
     try {
-      const response = await fetch("/api/memories/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          active_project_id: activeProjectId,
-          cross_project_search: crossProjectSearch,
-          query: searchQuery
-        })
+      const q = query(collection(db, "memories"), where("user_id", "==", auth.currentUser.uid));
+      const snapshot = await getDocs(q);
+      let allMemories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Memory));
+
+      // client-side filtering as per logic
+      const filtered = allMemories.filter(m => {
+        // Search query filter
+        if (searchQuery && !m.content.toLowerCase().includes(searchQuery.toLowerCase()) && !m.summary.toLowerCase().includes(searchQuery.toLowerCase())) {
+          return false;
+        }
+
+        // Logic based on cross-project search and project context
+        if (crossProjectSearch) return true;
+        if (m.scope === "global") return true;
+        if (m.scope === "project" && m.project_id === activeProjectId) return true;
+        if (m.scope === "session") return true; // Show sessions if they are the users
+
+        return false;
       });
-      const data = await response.json();
-      setMemories(data);
+
+      setMemories(filtered);
     } catch (error) {
-      console.error("Failed to search memories", error);
+      handleFirestoreError(error, "list", "memories");
     } finally {
       setLoading(false);
     }
@@ -85,24 +98,20 @@ export default function MemoryView({ activeProjectId, projects }: { activeProjec
 
   const updateMemory = async (id: string, updates: Partial<Memory>) => {
     try {
-      await fetch(`/api/memories/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates)
-      });
+      await updateDoc(doc(db, "memories", id), updates);
       fetchMemories();
     } catch (error) {
-      console.error("Failed to update memory", error);
+      handleFirestoreError(error, "update", `memories/${id}`);
     }
   };
 
   const deleteMemory = async (id: string) => {
     if (!confirm("Are you sure you want to purge this memory record?")) return;
     try {
-      await fetch(`/api/memories/${id}`, { method: "DELETE" });
+      await deleteDoc(doc(db, "memories", id));
       fetchMemories();
     } catch (error) {
-      console.error("Failed to delete memory", error);
+      handleFirestoreError(error, "delete", `memories/${id}`);
     }
   };
 
@@ -256,7 +265,7 @@ function MemoryRecordItem({
           </Badge>
           {project && (
             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-tight flex items-center">
-              <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: project.color }} />
+              <span className="w-1.5 h-1.5 rounded-full mr-1.5" style={{ backgroundColor: project?.color || "#71717a" }} />
               {project.name}
             </span>
           )}
@@ -279,10 +288,8 @@ function MemoryRecordItem({
         </div>
         
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-zinc-600 hover:text-zinc-300">
+          <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="text-zinc-600 hover:text-zinc-300" />}>
               <MoreVertical size={16} />
-            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-card border-border text-zinc-300 w-48">
             <DropdownMenuItem className="gap-2 focus:bg-emerald-500 focus:text-zinc-950 font-bold text-xs uppercase" onClick={() => onUpdate(memory.id, { scope: "global", project_id: null })}>
