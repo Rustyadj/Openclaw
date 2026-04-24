@@ -17,28 +17,28 @@ export default function LogsView({ logs }: { logs: any[] }) {
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-100 italic">Log Console</h2>
-          <p className="text-zinc-500 text-sm font-medium">Monitoring the global event stream and temporal traces.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-100 italic text-crisp">Log Console</h2>
+          <p className="text-zinc-500 text-sm font-medium text-crisp">Monitoring the global event stream and temporal traces.</p>
         </div>
         <div className="flex gap-2">
            <div className="relative">
              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
              <Input placeholder="Filter stream..." className="bg-muted border-border text-zinc-100 pl-9 w-64 h-10 text-xs focus:border-zinc-700 font-medium" />
            </div>
-           <Button variant="outline" className="bg-muted border-border text-zinc-400 hover:text-zinc-100 font-bold text-[10px] uppercase tracking-widest h-10 shadow-xl transition-all">
+           <Button variant="outline" className="btn-secondary font-bold text-[10px] h-10 px-4 border-none">
              <Download size={14} className="mr-2" /> Export
            </Button>
-           <Button variant="outline" className="bg-muted border-border text-rose-500 hover:text-rose-400 font-bold text-[10px] uppercase tracking-widest h-10 shadow-xl transition-all">
+           <Button variant="outline" className="btn-secondary text-rose-500 hover:text-rose-400 font-bold text-[10px] h-10 px-4 border-none">
              <Trash2 size={14} className="mr-2" /> Clear
            </Button>
         </div>
       </div>
 
-      <Card className="flex-1 min-h-0 bg-card border-border shadow-2xl flex flex-col rounded-lg overflow-hidden">
+      <Card className="flex-1 min-h-0 glass-card glass-card-dark flex flex-col rounded-3xl overflow-hidden shadow-none transition-all duration-500">
         <CardHeader className="border-b border-border py-4 px-6 flex flex-row items-center justify-between bg-muted/50">
           <div className="flex items-center gap-3">
             <Radio size={14} className="text-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-bold text-zinc-100 uppercase tracking-[0.2em] italic">Real-Time Spectral Traces</span>
+            <span className="text-[10px] font-bold text-zinc-100 uppercase tracking-[0.2em] italic text-crisp">Real-Time Spectral Traces</span>
           </div>
           <div className="flex items-center gap-6">
             <div className="flex flex-col items-end">
@@ -90,7 +90,7 @@ export default function LogsView({ logs }: { logs: any[] }) {
           </ScrollArea>
         </CardContent>
         {/* Terminal Footer Action Bar */}
-        <div className="p-4 bg-card border-t border-border flex items-center gap-4">
+        <div className="p-4 glass-card-dark border-t border-white/5 flex items-center gap-4 rounded-b-3xl">
            <div className="flex-1 flex items-center gap-3 px-4 py-2 bg-muted/50 border border-border rounded-md">
              <span className="text-emerald-500 font-bold text-xs">$</span>
              <input 

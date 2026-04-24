@@ -17,15 +17,15 @@ export default function SkillsView({ skills }: { skills: any[] }) {
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-100 italic">Skill Manifest</h2>
-          <p className="text-zinc-500 text-sm font-medium">Equip autonomous nodes with specialized functional modules.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-100 italic text-crisp">Skill Manifest</h2>
+          <p className="text-zinc-500 text-sm font-medium text-crisp">Equip autonomous nodes with specialized functional modules.</p>
         </div>
         <div className="flex gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
               <Input placeholder="Search registry..." className="w-64 bg-muted border-border focus:border-zinc-700 text-zinc-100 pl-9 h-10 text-xs" />
             </div>
-            <Button className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold uppercase tracking-widest text-[10px] h-10 px-4 shadow-lg shadow-emerald-500/10 transition-all active:scale-95">
+            <Button className="btn-primary text-[10px] h-10 px-4">
               <Plus size={14} className="mr-2" /> New Logic Module
             </Button>
         </div>
@@ -33,7 +33,7 @@ export default function SkillsView({ skills }: { skills: any[] }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {skills.map((skill) => (
-          <Card key={skill.id} className="bg-card border-border group hover:border-zinc-600 transition-all overflow-hidden">
+          <Card key={skill.id} className="glass-card glass-card-dark group hover:glass-card-accent transition-all overflow-hidden border-none transition-all duration-300">
             <CardHeader className="pb-4 pt-6 px-6 relative">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                 <Wrench size={48} className="text-zinc-100" />
@@ -44,7 +44,7 @@ export default function SkillsView({ skills }: { skills: any[] }) {
                 </div>
                 <Badge className="text-[10px] font-bold tracking-widest uppercase bg-muted border-border text-zinc-500 group-hover:text-zinc-300">v{skill.version}</Badge>
               </div>
-              <CardTitle className="text-lg font-bold text-zinc-100 italic group-hover:text-blue-400 transition-colors">{skill.name}</CardTitle>
+              <CardTitle className="text-lg font-bold text-zinc-100 italic group-hover:text-blue-400 transition-colors text-crisp">{skill.name}</CardTitle>
               <CardDescription className="text-zinc-500 text-xs font-medium leading-relaxed mt-2 min-h-[40px] italic">
                 {skill.description}
               </CardDescription>
@@ -59,7 +59,7 @@ export default function SkillsView({ skills }: { skills: any[] }) {
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                   <span className="text-[10px] font-bold uppercase tracking-tight text-emerald-500 italic">Verified Unit</span>
                 </div>
-                <Button size="sm" variant="ghost" className="text-zinc-500 hover:text-blue-400 hover:bg-blue-400/5 text-[10px] uppercase font-bold tracking-widest gap-2 h-8">
+                <Button size="sm" variant="ghost" className="btn-secondary text-[10px] gap-2 h-8 px-3 border-none">
                    <Download size={14} /> Install Logic
                 </Button>
               </div>
@@ -67,7 +67,7 @@ export default function SkillsView({ skills }: { skills: any[] }) {
           </Card>
         ))}
 
-        <Card className="bg-muted/30 border-2 border-dashed border-border/50 flex flex-col items-center justify-center py-12 px-6 text-center hover:bg-muted/50 hover:border-zinc-700 transition-all cursor-pointer group rounded-lg">
+        <Card className="glass-card glass-card-dark border-2 border-dashed border-border/50 flex flex-col items-center justify-center py-12 px-6 text-center hover:glass-card-accent transition-all cursor-pointer group rounded-3xl">
           <div className="w-12 h-12 rounded-full border border-dashed border-border flex items-center justify-center mb-4 text-zinc-600 group-hover:bg-card group-hover:border-zinc-500 group-hover:text-zinc-100 transition-all shadow-2xl">
             <Globe size={24} />
           </div>

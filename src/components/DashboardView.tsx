@@ -15,12 +15,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
-export default function DashboardView({ agents, skills, logs }: { agents: any[], skills: any[], logs: any[] }) {
+export default function DashboardView({ agents, skills, logs, usage }: { agents: any[], skills: any[], logs: any[], usage: any }) {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-1">
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100 italic">Sector Overview</h2>
-        <p className="text-zinc-500 text-sm font-medium">Monitoring autonomous node distribution across clusters.</p>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100 italic text-crisp">Sector Overview</h2>
+        <p className="text-zinc-500 text-sm font-medium text-crisp">Monitoring autonomous node distribution across clusters.</p>
       </div>
 
       {/* Stats Grid */}
@@ -55,13 +55,13 @@ export default function DashboardView({ agents, skills, logs }: { agents: any[],
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
-        <Card className="lg:col-span-2 bg-card border-border">
+        <Card className="lg:col-span-2 glass-card glass-card-dark">
           <CardHeader className="flex flex-row items-center justify-between py-4 border-b border-border/50 mb-4">
             <div>
-              <CardTitle className="text-lg font-bold text-zinc-100 uppercase tracking-tighter">Event Vector</CardTitle>
-              <CardDescription className="text-zinc-500">Global orchestration log.</CardDescription>
+              <CardTitle className="text-lg font-bold text-zinc-100 uppercase tracking-tighter text-crisp">Event Vector</CardTitle>
+              <CardDescription className="text-zinc-500 text-crisp">Global orchestration log.</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" className="text-zinc-500 hover:text-zinc-100 text-[10px] uppercase font-bold tracking-widest">
+            <Button variant="ghost" size="sm" className="btn-secondary text-zinc-500 hover:text-zinc-100 text-[10px] uppercase font-bold tracking-widest border-none h-7">
               Full Spectrum <ChevronRight size={14} className="ml-1" />
             </Button>
           </CardHeader>
@@ -92,7 +92,7 @@ export default function DashboardView({ agents, skills, logs }: { agents: any[],
         </Card>
 
         {/* System Health / Model Routing */}
-        <Card className="bg-card border-border">
+        <Card className="glass-card glass-card-dark border-none">
           <CardHeader className="py-4 border-b border-zinc-800/50 mb-4">
             <CardTitle className="text-lg font-bold text-zinc-100 uppercase tracking-tighter">Thread Load</CardTitle>
             <CardDescription className="text-zinc-500">Resource distribution.</CardDescription>
@@ -120,10 +120,10 @@ export default function DashboardView({ agents, skills, logs }: { agents: any[],
 
 function StatCard({ title, value, subValue, icon, trend }: { title: string, value: string, subValue: string, icon: React.ReactNode, trend?: 'up' | 'down' }) {
   return (
-    <Card className="bg-card border-border overflow-hidden relative group hover:border-zinc-500 transition-colors">
+    <Card className="glass-card glass-card-dark overflow-hidden relative group hover:glass-card-accent transition-all duration-300">
       <CardContent className="p-5">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{title}</p>
+          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-crisp">{title}</p>
           <div className="p-1.5 rounded-md bg-muted border border-border">
             {icon}
           </div>
