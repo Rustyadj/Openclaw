@@ -32,6 +32,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifsOpen, setNotifsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1100);
   const [summary, setSummary] = useState<GatewaySummary>(FALLBACK_SUMMARY);
 
@@ -121,6 +122,8 @@ export default function App() {
         currentUserName={auth.user?.displayName || 'Rusty'}
         mobile={isMobile}
         mobileOpen={mobileNavOpen}
+        collapsed={!isMobile && sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(v => !v)}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
