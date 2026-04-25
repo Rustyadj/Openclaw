@@ -13,6 +13,7 @@ import { Documents, Terminal } from './components/pages';
 import { MetricsEnhanced } from './components/metrics/MetricsEnhanced';
 import Settings from './components/settings/Settings';
 import PersonalWorkspace from './components/workspace/PersonalWorkspace';
+import DesignPipeline from './components/design/DesignPipeline';
 import { SearchModal, NotificationsPanel } from './components/ui/SearchAndNotifications';
 import { fetchGatewaySummary, type GatewaySummary } from './lib/api';
 import { ConnectionBanner } from './components/system/ConnectionBanner';
@@ -90,8 +91,9 @@ export default function App() {
       case 'documents':    return <Documents />;
       case 'metrics':      return <MetricsEnhanced />;
       case 'terminal':     return <Terminal />;
-      case 'settings':     return <Settings />;
-      default:             return null;
+      case 'settings':         return <Settings />;
+      case 'design-pipeline':  return <DesignPipeline />;
+      default:                 return null;
     }
   };
 

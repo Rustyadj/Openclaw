@@ -12,8 +12,9 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   memory:       { title: 'Memory Vault',        subtitle: 'Persistent agent knowledge' },
   documents:    { title: 'Documents',           subtitle: 'AI-searchable knowledge base' },
   metrics:      { title: 'Metrics',             subtitle: 'Performance & analytics' },
-  terminal:     { title: 'Terminal',            subtitle: 'Direct gateway access' },
-  settings:     { title: 'Settings',            subtitle: 'Configure your environment' },
+  terminal:         { title: 'Terminal',           subtitle: 'Direct gateway access' },
+  settings:         { title: 'Settings',           subtitle: 'Configure your environment' },
+  'design-pipeline': { title: 'Design Pipeline',   subtitle: 'Elite 4-step design & build workflow' },
 };
 
 interface HeaderProps {

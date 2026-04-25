@@ -17,10 +17,11 @@ const NAV = [
     { id: 'personal',   label: 'Personal Workspace', icon: '🔒' },
   ]},
   { section: 'WORKSPACE', items: [
-    { id: 'org',       label: 'Organization',  icon: '⬡' },
-    { id: 'agents',    label: 'Agents',        icon: '◎', badge: 3 },
-    { id: 'workflows', label: 'Workflows',     icon: '⟐' },
-    { id: 'capabilities', label: 'Capabilities', icon: '⚡' },
+    { id: 'org',             label: 'Organization',    icon: '⬡' },
+    { id: 'agents',          label: 'Agents',          icon: '◎', badge: 3 },
+    { id: 'workflows',       label: 'Workflows',       icon: '⟐' },
+    { id: 'capabilities',    label: 'Capabilities',    icon: '⚡' },
+    { id: 'design-pipeline', label: 'Design Pipeline', icon: '✦' },
   ]},
   { section: 'DATA', items: [
     { id: 'memory',    label: 'Memory Vault',  icon: '◫' },
