@@ -55,36 +55,97 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 // ── Sub-views ──────────────────────────────────────────────
 
-function OrgOverview() {
+const EMOJI_OPTIONS = ['R', '⚖', '🦅', '🔮', '⚡', '🏛', '🌐', '🤖', '🦁', '💎'];
+const ACCENT_OPTIONS = ['#00E6A8', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#10B981', '#F97316', '#EF4444'];
+
+function OrgOverview({ orgName, setOrgName, orgHandle, setOrgHandle, orgEmoji, setOrgEmoji, orgAccent, setOrgAccent }: {
+  orgName: string; setOrgName: (v: string) => void;
+  orgHandle: string; setOrgHandle: (v: string) => void;
+  orgEmoji: string; setOrgEmoji: (v: string) => void;
+  orgAccent: string; setOrgAccent: (v: string) => void;
+}) {
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(orgName);
+  const [editingHandle, setEditingHandle] = useState(false);
+  const [handleInput, setHandleInput] = useState(orgHandle);
+  const [showCustomize, setShowCustomize] = useState(false);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Org header card */}
       <div className="glass-card" style={{
         padding: '20px 24px',
-        background: 'linear-gradient(135deg, rgba(0,230,168,0.08), rgba(59,130,246,0.06))',
-        borderColor: 'rgba(0,230,168,0.2)',
+        background: `linear-gradient(135deg, ${orgAccent}10, rgba(59,130,246,0.06))`,
+        borderColor: `${orgAccent}30`,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
             width: 52, height: 52, borderRadius: 14,
-            background: 'linear-gradient(135deg, #00E6A8, #3B82F6)',
+            background: `linear-gradient(135deg, ${orgAccent}, ${orgAccent}99)`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 22, fontWeight: 800, color: '#fff',
-            boxShadow: '0 6px 20px rgba(0,230,168,0.3)',
-          }}>R</div>
+            fontSize: 22, fontWeight: 800, color: '#021a0f',
+            boxShadow: `0 6px 20px ${orgAccent}40`,
+            cursor: 'pointer', userSelect: 'none',
+          }} onClick={() => setShowCustomize(!showCustomize)}>{orgEmoji}</div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>Rusty's Org</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'DM Mono, monospace', marginTop: 2 }}>@rustyadj · 4 members · 2 AI agents · Since Apr 2026</div>
+            {editingName ? (
+              <input autoFocus value={nameInput} onChange={e => setNameInput(e.target.value)}
+                onBlur={() => { setOrgName(nameInput.trim() || orgName); setEditingName(false); }}
+                onKeyDown={e => { if (e.key === 'Enter') { setOrgName(nameInput.trim() || orgName); setEditingName(false); } if (e.key === 'Escape') setEditingName(false); }}
+                style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', background: 'rgba(255,255,255,0.07)', border: `1px solid ${orgAccent}60`, borderRadius: 7, padding: '2px 9px', color: 'var(--text-primary)', fontFamily: "'Outfit',sans-serif", outline: 'none' }}
+              />
+            ) : (
+              <div onClick={() => { setNameInput(orgName); setEditingName(true); }} style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', cursor: 'text', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                {orgName} <span style={{ fontSize: 12, color: 'var(--text-muted)', opacity: 0.5, fontWeight: 400 }}>✎</span>
+              </div>
+            )}
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'DM Mono, monospace', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {editingHandle ? (
+                <input autoFocus value={handleInput} onChange={e => setHandleInput(e.target.value)}
+                  onBlur={() => { setOrgHandle(handleInput.trim() || orgHandle); setEditingHandle(false); }}
+                  onKeyDown={e => { if (e.key === 'Enter') { setOrgHandle(handleInput.trim() || orgHandle); setEditingHandle(false); } if (e.key === 'Escape') setEditingHandle(false); }}
+                  style={{ fontSize: 12, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 5, padding: '1px 7px', color: 'var(--text-muted)', fontFamily: 'DM Mono, monospace', outline: 'none', width: 100 }}
+                />
+              ) : (
+                <span onClick={() => { setHandleInput(orgHandle); setEditingHandle(true); }} style={{ cursor: 'text' }}>@{orgHandle}</span>
+              )}
+              · 4 members · 2 AI agents · Since Apr 2026
+            </div>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 9, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", color: 'var(--text-secondary)' }}>
+            <button onClick={() => setShowCustomize(!showCustomize)} style={{ background: showCustomize ? `${orgAccent}16` : 'rgba(255,255,255,0.05)', border: `1px solid ${showCustomize ? orgAccent + '40' : 'rgba(255,255,255,0.09)'}`, borderRadius: 9, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", color: showCustomize ? orgAccent : 'var(--text-secondary)' }}>
+              ✦ Customize
+            </button>
+            <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 9, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", color: 'var(--text-secondary)' }}>
               🔗 Invite Link
             </button>
-            <button style={{ background: 'linear-gradient(135deg, #00E6A8, #00C494)', border: 'none', borderRadius: 9, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", color: '#fff', boxShadow: '0 3px 10px rgba(0,230,168,0.3)' }}>
+            <button style={{ background: `linear-gradient(135deg, ${orgAccent}, ${orgAccent}CC)`, border: 'none', borderRadius: 9, padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", color: '#021a0f', boxShadow: `0 3px 10px ${orgAccent}40` }}>
               + Invite Member
             </button>
           </div>
         </div>
+
+        {/* Customize panel */}
+        {showCustomize && (
+          <div className="animate-fade-up" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8 }}>Org Icon</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {EMOJI_OPTIONS.map(e => (
+                  <button key={e} onClick={() => setOrgEmoji(e)} style={{ width: 34, height: 34, borderRadius: 9, border: `1.5px solid ${orgEmoji === e ? orgAccent : 'rgba(255,255,255,0.1)'}`, background: orgEmoji === e ? `${orgAccent}20` : 'rgba(255,255,255,0.05)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: orgEmoji === e ? orgAccent : 'var(--text-secondary)' }}>{e}</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8 }}>Accent Color</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {ACCENT_OPTIONS.map(c => (
+                  <button key={c} onClick={() => setOrgAccent(c)} style={{ width: 28, height: 28, borderRadius: 8, background: c, border: `2px solid ${orgAccent === c ? '#fff' : 'transparent'}`, cursor: 'pointer', boxShadow: orgAccent === c ? `0 0 10px ${c}80` : 'none', transition: 'all 0.15s' }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats */}
@@ -110,7 +171,7 @@ function OrgOverview() {
           {MEMBERS.map(m => (
             <div key={m.name} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
-              background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.05)',
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 10, cursor: 'pointer', transition: 'all 0.15s',
             }}>
               <div style={{
@@ -137,30 +198,25 @@ function OrgOverview() {
   );
 }
 
-function OrgChart() {
+function OrgChart({ orgName, orgEmoji, orgAccent }: { orgName: string; orgEmoji: string; orgAccent: string }) {
+  const connLine = { width: 2, height: 32, background: 'rgba(255,255,255,0.12)' };
   return (
     <GlassCard style={{ minHeight: 400 }}>
       <SectionTitle>Organization Chart</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0, padding: '20px 0' }}>
-        {/* Root */}
-        <OrgNode name="Rusty" role="Owner" agent="Orchestrator" color="#00E6A8" initial="R" isRoot />
-        <div style={{ width: 2, height: 32, background: 'rgba(0,0,0,0.1)' }} />
-
-        {/* Branch line */}
+        <OrgNode name={orgName} role="Owner" agent="Orchestrator" color={orgAccent} initial={orgEmoji} isRoot />
+        <div style={connLine} />
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 40 }}>
-          {/* Left branch */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 2, height: 28, background: 'rgba(0,0,0,0.1)' }} />
+            <div style={connLine} />
             <OrgNode name="Sarah K." role="Admin" agent="LawAssist" color="#3B82F6" initial="S" />
           </div>
-          {/* Mid */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 2, height: 28, background: 'rgba(0,0,0,0.1)' }} />
+            <div style={connLine} />
             <OrgNode name="Marcus T." role="Member" agent={null} color="#8B5CF6" initial="M" />
           </div>
-          {/* Right */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ width: 2, height: 28, background: 'rgba(0,0,0,0.1)' }} />
+            <div style={connLine} />
             <OrgNode name="Alex R." role="Guest" agent={null} color="#F59E0B" initial="A" />
           </div>
         </div>
@@ -172,11 +228,11 @@ function OrgChart() {
 function OrgNode({ name, role, agent, color, initial, isRoot }: any) {
   return (
     <div style={{
-      background: isRoot ? `linear-gradient(135deg, ${color}15, ${color}08)` : 'rgba(255,255,255,0.6)',
-      border: `1.5px solid ${isRoot ? color + '40' : 'rgba(0,0,0,0.08)'}`,
+      background: isRoot ? `linear-gradient(135deg, ${color}15, ${color}08)` : 'rgba(255,255,255,0.04)',
+      border: `1.5px solid ${isRoot ? color + '40' : 'rgba(255,255,255,0.09)'}`,
       borderRadius: 14, padding: '14px 18px', minWidth: 160, textAlign: 'center',
       cursor: 'pointer', transition: 'all 0.18s',
-      boxShadow: isRoot ? `0 6px 20px ${color}20` : 'var(--glass-shadow)',
+      boxShadow: isRoot ? `0 6px 20px ${color}20` : '0 2px 12px rgba(0,0,0,0.3)',
     }}>
       <div style={{
         width: 40, height: 40, borderRadius: 12, margin: '0 auto 8px',
@@ -203,8 +259,8 @@ function Projects() {
       <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
         {['Kanban', 'List', 'Calendar', 'Timeline'].map((v, i) => (
           <button key={v} style={{
-            padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.08)',
-            background: i === 0 ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)',
+            padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.09)',
+            background: i === 0 ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
             fontSize: 12, fontWeight: i === 0 ? 600 : 500,
             color: i === 0 ? 'var(--text-primary)' : 'var(--text-muted)',
             cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
@@ -234,7 +290,7 @@ function Projects() {
                   </div>
                 ))}
                 <div style={{
-                  border: '1.5px dashed rgba(0,0,0,0.1)', borderRadius: 10,
+                  border: '1.5px dashed rgba(255,255,255,0.1)', borderRadius: 10,
                   padding: '10px', textAlign: 'center', cursor: 'pointer',
                   fontSize: 11, color: 'var(--text-muted)',
                 }}>+ Add</div>
@@ -288,8 +344,8 @@ function Discussions() {
             </div>
           ))}
         </div>
-        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-          <input placeholder={`Message ${activeChannel}...`} style={{ width: '100%', background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 9, padding: '9px 14px', fontSize: 12 }} />
+        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <input placeholder={`Message ${activeChannel}...`} style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 9, padding: '9px 14px', fontSize: 12, color: 'var(--text-primary)' }} />
         </div>
       </div>
     </div>
@@ -313,7 +369,7 @@ function Tasks() {
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               {['Task', 'Assignee', 'Priority', 'Status', 'Due'].map(h => (
                 <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 10, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{h}</th>
               ))}
@@ -321,8 +377,8 @@ function Tasks() {
           </thead>
           <tbody>
             {tasks.map((t, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)', transition: 'background 0.12s', cursor: 'pointer' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.02)')}
+              <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.12s', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}
               >
                 <td style={{ padding: '11px 16px', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>{t.title}</td>
@@ -343,11 +399,15 @@ function Tasks() {
 
 export default function Organization() {
   const [sub, setSub] = useState<SubTab>('overview');
+  const [orgName, setOrgName] = useState("Rusty's Org");
+  const [orgHandle, setOrgHandle] = useState('rustyadj');
+  const [orgEmoji, setOrgEmoji] = useState('R');
+  const [orgAccent, setOrgAccent] = useState('#00E6A8');
 
   const renderSub = () => {
     switch (sub) {
-      case 'overview':    return <OrgOverview />;
-      case 'chart':       return <OrgChart />;
+      case 'overview':    return <OrgOverview orgName={orgName} setOrgName={setOrgName} orgHandle={orgHandle} setOrgHandle={setOrgHandle} orgEmoji={orgEmoji} setOrgEmoji={setOrgEmoji} orgAccent={orgAccent} setOrgAccent={setOrgAccent} />;
+      case 'chart':       return <OrgChart orgName={orgName} orgEmoji={orgEmoji} orgAccent={orgAccent} />;
       case 'projects':    return <Projects />;
       case 'discussions': return <Discussions />;
       case 'tasks':       return <Tasks />;
@@ -365,8 +425,8 @@ export default function Organization() {
       {/* Sub-tabs */}
       <div style={{
         display: 'flex', gap: 2, padding: '4px',
-        background: 'rgba(255,255,255,0.5)', border: '1px solid rgba(0,0,0,0.07)',
-        borderRadius: 12, backdropFilter: 'blur(12px)', width: 'fit-content',
+        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 12, backdropFilter: 'blur(12px)', width: 'fit-content', flexWrap: 'wrap',
       }}>
         {SUB_TABS.map(t => (
           <button
@@ -375,12 +435,12 @@ export default function Organization() {
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               padding: '7px 13px', borderRadius: 9, border: 'none',
-              background: sub === t.id ? 'white' : 'transparent',
-              color: sub === t.id ? 'var(--text-primary)' : 'var(--text-muted)',
+              background: sub === t.id ? 'rgba(0,230,168,0.14)' : 'transparent',
+              color: sub === t.id ? '#00E6A8' : 'var(--text-muted)',
               fontFamily: "'Outfit', sans-serif",
               fontSize: 12, fontWeight: sub === t.id ? 700 : 500,
               cursor: 'pointer', transition: 'all 0.15s',
-              boxShadow: sub === t.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+              boxShadow: sub === t.id ? 'inset 0 0 0 1px rgba(0,230,168,0.25)' : 'none',
             }}
           >
             <span style={{ fontSize: 13 }}>{t.icon}</span>

@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
 
+const AI_MODELS = [
+  { id: 'claude-sonnet-4-6',    label: 'Claude Sonnet 4.6',   provider: 'Anthropic' },
+  { id: 'claude-opus-4-6',      label: 'Claude Opus 4.6',     provider: 'Anthropic' },
+  { id: 'claude-haiku-4-5',     label: 'Claude Haiku 4.5',    provider: 'Anthropic' },
+  { id: 'gemini-flash-3',       label: 'Gemini Flash 3',      provider: 'Google' },
+  { id: 'deepseek-r1-0528',     label: 'DeepSeek R1',         provider: 'DeepSeek' },
+  { id: 'gpt-4o',               label: 'GPT-4o',              provider: 'OpenAI' },
+];
+
 const AGENTS = [
   {
     id: 'orchestrator', name: 'Orchestrator', model: 'claude-sonnet-4-6',
@@ -30,6 +39,9 @@ const AGENTS = [
 export default function Agents() {
   const [selected, setSelected] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [agentModels, setAgentModels] = useState<Record<string, string>>(
+    () => Object.fromEntries(AGENTS.map(a => [a.id, a.model]))
+  );
 
   const agent = AGENTS.find(a => a.id === selected);
 
@@ -113,7 +125,16 @@ export default function Agents() {
                 <div style={{ width: 46, height: 46, borderRadius: 13, background: `${a.color}14`, border: `1.5px solid ${a.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: a.color, boxShadow: `0 0 16px ${a.glow}`, flexShrink: 0 }}>{a.initial}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', color: 'var(--text-primary)' }}>{a.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'DM Mono, monospace', marginTop: 2 }}>{a.model}</div>
+                  <select
+                    value={agentModels[a.id]}
+                    onChange={e => { e.stopPropagation(); setAgentModels(prev => ({ ...prev, [a.id]: e.target.value })); }}
+                    onClick={e => e.stopPropagation()}
+                    style={{ marginTop: 4, background: 'rgba(255,255,255,0.06)', border: `1px solid ${a.color}30`, borderRadius: 6, padding: '3px 8px', fontSize: 10, color: a.color, fontFamily: 'DM Mono, monospace', cursor: 'pointer', outline: 'none' }}
+                  >
+                    {AI_MODELS.map(m => (
+                      <option key={m.id} value={m.id}>{m.label}</option>
+                    ))}
+                  </select>
                 </div>
                 <span className={`tag tag-${a.status === 'busy' ? 'amber' : 'green'}`}>{a.status}</span>
               </div>
@@ -173,7 +194,15 @@ export default function Agents() {
               <div style={{ width: 44, height: 44, borderRadius: 13, background: `${agent.color}14`, border: `1.5px solid ${agent.color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: agent.color, boxShadow: `0 0 18px ${agent.glow}` }}>{agent.initial}</div>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.4px' }}>{agent.name}</div>
-                <div style={{ fontSize: 10, fontFamily: 'DM Mono, monospace', color: 'var(--text-muted)', marginTop: 2 }}>{agent.model}</div>
+                <select
+                  value={agentModels[agent.id]}
+                  onChange={e => setAgentModels(prev => ({ ...prev, [agent.id]: e.target.value }))}
+                  style={{ marginTop: 4, background: 'rgba(255,255,255,0.06)', border: `1px solid ${agent.color}30`, borderRadius: 6, padding: '3px 8px', fontSize: 10, color: agent.color, fontFamily: 'DM Mono, monospace', cursor: 'pointer', outline: 'none', width: '100%' }}
+                >
+                  {AI_MODELS.map(m => (
+                    <option key={m.id} value={m.id}>{m.label} ({m.provider})</option>
+                  ))}
+                </select>
               </div>
             </div>
 

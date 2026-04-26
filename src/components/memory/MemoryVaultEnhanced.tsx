@@ -139,7 +139,7 @@ export function MemoryVaultEnhanced() {
     setNewKey(''); setNewValue(''); setNewScope('Global');
   };
 
-  const inp: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontFamily: "'Outfit',sans-serif" };
+  const inp: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '8px 12px', fontSize: 12, fontFamily: "'Outfit',sans-serif", color: 'var(--text-primary)' };
 
   // Stats
   const totalSize = memories.reduce((a, m) => a + parseFloat(m.size), 0);
@@ -149,10 +149,10 @@ export function MemoryVaultEnhanced() {
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
       {/* Left panel - list */}
-      <div style={{ width: 300, flexShrink: 0, borderRight: '1px solid rgba(0,0,0,0.06)', background: 'rgba(255,255,255,0.3)', backdropFilter: 'blur(16px)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: 300, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(16px)', display: 'flex', flexDirection: 'column' }}>
 
         {/* Header */}
-        <div style={{ padding: '16px 14px 12px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+        <div style={{ padding: '16px 14px 12px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 800 }}>Memory Vault</div>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -165,13 +165,13 @@ export function MemoryVaultEnhanced() {
           </div>
           <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
             {['All','Global','Org','Session','Personal'].map(s => (
-              <button key={s} onClick={() => setScopeFilter(s)} style={{ padding: '3px 8px', borderRadius: 6, border: 'none', background: scopeFilter === s ? 'var(--accent)' : 'rgba(0,0,0,0.06)', color: scopeFilter === s ? '#fff' : 'var(--text-muted)', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>{s}</button>
+              <button key={s} onClick={() => setScopeFilter(s)} style={{ padding: '3px 8px', borderRadius: 6, border: 'none', background: scopeFilter === s ? 'var(--accent)' : 'rgba(255,255,255,0.07)', color: scopeFilter === s ? '#021a0f' : 'var(--text-muted)', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif" }}>{s}</button>
             ))}
           </div>
         </div>
 
         {/* Stats strip */}
-        <div style={{ padding: '8px 14px', borderBottom: '1px solid rgba(0,0,0,0.04)', display: 'flex', gap: 12 }}>
+        <div style={{ padding: '8px 14px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: 12 }}>
           <div style={{ flex: 1, textAlign: 'center' }}>
             <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent-dark)' }}>{memories.length}</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>Entries</div>
@@ -190,7 +190,7 @@ export function MemoryVaultEnhanced() {
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
           {filtered.length === 0 && <div style={{ padding: '24px', textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>No entries match "{search}"</div>}
           {filtered.map(m => (
-            <div key={m.key} onClick={() => { setActive(m); setEditMode(false); }} style={{ padding: '10px 12px', borderRadius: 9, cursor: 'pointer', marginBottom: 4, background: active.key === m.key ? 'rgba(0,230,168,0.1)' : 'rgba(255,255,255,0.5)', border: `1px solid ${active.key === m.key ? 'rgba(0,230,168,0.3)' : 'rgba(0,0,0,0.05)'}`, transition: 'all 0.12s' }}>
+            <div key={m.key} onClick={() => { setActive(m); setEditMode(false); }} style={{ padding: '10px 12px', borderRadius: 9, cursor: 'pointer', marginBottom: 4, background: active.key === m.key ? 'rgba(0,230,168,0.10)' : 'rgba(255,255,255,0.03)', border: `1px solid ${active.key === m.key ? 'rgba(0,230,168,0.3)' : 'rgba(255,255,255,0.06)'}`, transition: 'all 0.12s' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.key}</span>
                 <span className={`tag ${SCOPE_COLORS[m.scope] ?? 'tag-gray'}`} style={{ fontSize: 9 }}>{m.scope}</span>
@@ -206,9 +206,9 @@ export function MemoryVaultEnhanced() {
         </div>
 
         {/* Bottom actions */}
-        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', gap: 6 }}>
-          <button style={{ flex: 1, background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '7px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", color: 'var(--text-secondary)' }}>⬆ Export</button>
-          <button style={{ flex: 1, background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '7px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", color: 'var(--text-secondary)' }}>⬇ Import</button>
+        <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: 6 }}>
+          <button style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '7px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", color: 'var(--text-secondary)' }}>⬆ Export</button>
+          <button style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '7px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", color: 'var(--text-secondary)' }}>⬇ Import</button>
           <button style={{ flex: 1, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '7px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'Outfit',sans-serif", color: 'var(--status-amber)' }}>Compact</button>
         </div>
       </div>
@@ -217,7 +217,7 @@ export function MemoryVaultEnhanced() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* Detail toolbar */}
-        <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: '-0.3px', fontFamily: 'DM Mono,monospace' }}>{active.key}</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 3, alignItems: 'center' }}>
@@ -232,13 +232,13 @@ export function MemoryVaultEnhanced() {
           {!editMode ? (
             <div style={{ display: 'flex', gap: 7 }}>
               <button onClick={startEdit} style={{ background: 'linear-gradient(135deg,#00E6A8,#00C494)', border: 'none', borderRadius: 8, padding: '7px 14px', color: '#fff', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Edit</button>
-              <button style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '7px 14px', color: 'var(--text-secondary)', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Export</button>
+              <button style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '7px 14px', color: 'var(--text-secondary)', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Export</button>
               <button onClick={deleteMemory} style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '7px 14px', color: 'var(--status-red)', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Delete</button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 7 }}>
               <button onClick={saveEdit} style={{ background: 'linear-gradient(135deg,#00E6A8,#00C494)', border: 'none', borderRadius: 8, padding: '7px 14px', color: '#fff', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Save</button>
-              <button onClick={() => setEditMode(false)} style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '7px 14px', color: 'var(--text-secondary)', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setEditMode(false)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 8, padding: '7px 14px', color: 'var(--text-secondary)', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
             </div>
           )}
         </div>
@@ -246,7 +246,7 @@ export function MemoryVaultEnhanced() {
         {/* Value area */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
           {!editMode ? (
-            <div style={{ height: '100%', overflow: 'auto', padding: '20px', background: 'rgba(0,0,0,0.02)' }}>
+            <div style={{ height: '100%', overflow: 'auto', padding: '20px', background: 'rgba(255,255,255,0.01)' }}>
               <pre style={{ fontFamily: 'DM Mono,monospace', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
                 {active.value}
               </pre>
@@ -255,7 +255,7 @@ export function MemoryVaultEnhanced() {
             <textarea
               value={editValue}
               onChange={e => setEditValue(e.target.value)}
-              style={{ width: '100%', height: '100%', background: '#fafbfc', border: 'none', padding: '20px', fontFamily: 'DM Mono,monospace', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.8, resize: 'none', outline: 'none' }}
+              style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.03)', border: 'none', padding: '20px', fontFamily: 'DM Mono,monospace', fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.8, resize: 'none', outline: 'none' }}
             />
           )}
         </div>
@@ -264,7 +264,7 @@ export function MemoryVaultEnhanced() {
       {/* New Entry Modal */}
       {newEntryOpen && (
         <div onClick={() => setNewEntryOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(6px)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} className="animate-fade-up" style={{ background: 'rgba(248,249,252,0.98)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 16, padding: '24px', width: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+          <div onClick={e => e.stopPropagation()} className="animate-fade-up" style={{ background: 'rgba(10,12,22,0.98)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '24px', width: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.7)' }}>
             <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 16 }}>New Memory Entry</div>
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 5 }}>Key</div>
@@ -281,7 +281,7 @@ export function MemoryVaultEnhanced() {
               <textarea rows={5} value={newValue} onChange={e => setNewValue(e.target.value)} placeholder='{ "key": "value" }' style={{ ...inp, resize: 'none', lineHeight: 1.6, fontFamily: 'DM Mono,monospace' }} />
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setNewEntryOpen(false)} style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 9, padding: '9px 16px', color: 'var(--text-secondary)', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => setNewEntryOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 9, padding: '9px 16px', color: 'var(--text-secondary)', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
               <button onClick={addEntry} style={{ background: 'linear-gradient(135deg,#00E6A8,#00C494)', border: 'none', borderRadius: 9, padding: '9px 20px', color: '#fff', fontFamily: "'Outfit',sans-serif", fontSize: 12, fontWeight: 700, cursor: 'pointer', boxShadow: '0 3px 10px rgba(0,230,168,0.3)' }}>Save Entry</button>
             </div>
           </div>
