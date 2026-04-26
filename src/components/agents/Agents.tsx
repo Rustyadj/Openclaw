@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 
 const AI_MODELS = [
+  // OpenAI — GPT models (subscription auth)
+  { id: 'gpt-5.5',             label: 'GPT 5.5',             provider: 'OpenAI' },
+  { id: 'gpt-5.4',             label: 'GPT 5.4',             provider: 'OpenAI' },
+  { id: 'gpt-4o',              label: 'GPT-4o',              provider: 'OpenAI' },
+  { id: 'gpt-4-turbo',         label: 'GPT-4 Turbo',        provider: 'OpenAI' },
+  { id: 'gpt-4',               label: 'GPT-4',               provider: 'OpenAI' },
+  { id: 'gpt-3.5-turbo',       label: 'GPT-3.5 Turbo',      provider: 'OpenAI' },
+  // Anthropic — Claude models
   { id: 'claude-sonnet-4-6',    label: 'Claude Sonnet 4.6',   provider: 'Anthropic' },
   { id: 'claude-opus-4-6',      label: 'Claude Opus 4.6',     provider: 'Anthropic' },
   { id: 'claude-haiku-4-5',     label: 'Claude Haiku 4.5',    provider: 'Anthropic' },
+  // Google
   { id: 'gemini-flash-3',       label: 'Gemini Flash 3',      provider: 'Google' },
+  { id: 'gemini-pro-3',         label: 'Gemini Pro 3',        provider: 'Google' },
+  // DeepSeek
   { id: 'deepseek-r1-0528',     label: 'DeepSeek R1',         provider: 'DeepSeek' },
-  { id: 'gpt-4o',               label: 'GPT-4o',              provider: 'OpenAI' },
 ];
 
 const AGENTS = [
