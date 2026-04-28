@@ -7,7 +7,7 @@ COPY . .
 # Vite bakes these into the JS bundle at build time — pass them as build args.
 ARG VITE_API_BASE_URL=/api
 ARG VITE_AUTH_MODE=openclaw
-ARG VITE_APP_NAME=OpenClaw Command Center
+ARG VITE_APP_NAME=Neural Hub
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_AUTH_MODE=$VITE_AUTH_MODE
 ENV VITE_APP_NAME=$VITE_APP_NAME

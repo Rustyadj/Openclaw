@@ -24,7 +24,7 @@ For ALL UI, design, frontend, component, page, dashboard, landing page, branding
 - API gateway: port 18789 on the VPS host, proxied via nginx at `/api/`
 
 ## Project Context
-- **App:** OpenClaw Command Center — glassmorphism SaaS dashboard
+- **App:** Neural Hub — dark glassmorphism SaaS command center
 - **VPS:** Hostinger at `187.124.66.30`, Docker deployed on port 80
 - **App URL:** `http://187.124.66.30/cc/`
 - **Deploy:** `bash deploy.sh` from the VPS (pulls `main`, then `docker compose up -d --build`)

@@ -6,7 +6,7 @@ const toBool = (value: string | undefined, fallback = false) => {
 const authMode = (import.meta.env.VITE_AUTH_MODE || '').toLowerCase();
 
 export const appConfig = {
-  appName: import.meta.env.VITE_APP_NAME || 'OpenClaw Command Center',
+  appName: import.meta.env.VITE_APP_NAME || 'Neural Hub',
   apiBaseUrl: (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, ''),
   apiTimeoutMs: Number(import.meta.env.VITE_API_TIMEOUT_MS || 10000),
   authMode: (authMode || (toBool(import.meta.env.VITE_ALLOW_DEMO_AUTH, false) ? 'demo' : 'firebase')) as 'demo' | 'firebase' | 'openclaw',
